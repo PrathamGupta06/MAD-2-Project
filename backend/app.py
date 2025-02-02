@@ -3,7 +3,10 @@ from flask_cors import CORS
 from flask_restful import Api
 from extensions import db, jwt
 from config import Config
-from routes import LoginResource, UserRegistrationResource
+from routes import (
+    LoginResource, UserRegistrationResource, 
+    SubjectResource, QuizResource, ScoreResource
+)
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -14,8 +17,11 @@ def create_app(config_class=Config):
     jwt.init_app(app)
     
     api = Api(app)
-    api.add_resource(LoginResource, '/login')
-    api.add_resource(UserRegistrationResource, '/register')
+    api.add_resource(LoginResource, '/api/login')
+    api.add_resource(UserRegistrationResource, '/api/register')
+    api.add_resource(SubjectResource, '/api/subjects')
+    api.add_resource(QuizResource, '/api/quizzes', '/api/quizzes/<int:quiz_id>')
+    api.add_resource(ScoreResource, '/api/scores')
 
     with app.app_context():
         from models import Admin
