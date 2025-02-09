@@ -61,6 +61,8 @@ class SubjectResource(Resource):
         db.session.commit()
         return {'message': 'Subject created successfully'}, 201
 
+# TODO: Add a chapter resource too where admin can create new chapters and the user can view the chapters
+
 class QuizResource(Resource):
     @admin_required
     def post(self):
