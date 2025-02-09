@@ -139,6 +139,9 @@ class SubmitAnswersResource(Resource):
         quiz = Quiz.query.get_or_404(quiz_id)
         if not quiz.is_open_today():
             return {'message': 'Quiz is not open today'}, 400
+        
+        if Score.query.filter_by(user_id=user_id, quiz_id=quiz_id).first():
+            return {'message': 'Answers already submitted for this quiz'}, 400
 
         total_score = 0
         for answer in answers:
