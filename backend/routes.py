@@ -77,27 +77,45 @@ class QuizResource(Resource):
     @user_required
     def get(self, quiz_id):
         quiz = Quiz.query.get_or_404(quiz_id)
+        num_questions = len(quiz.questions)
+        question_ids = [question.id for question in quiz.questions]
         return {
             'id': quiz.id,
             'chapter_id': quiz.chapter_id,
             'date_of_quiz': quiz.date_of_quiz.isoformat(),
-            'time_duration': str(quiz.time_duration)
+            'time_duration': str(quiz.time_duration),
+            'num_questions': num_questions,
+            'question_ids': question_ids
+        }
+
+class QuestionResource(Resource):
+    @admin_required
+    def post(self):
+        data = request.get_json()
+        question = Question(
+            quiz_id=data['quiz_id'],
+            question_statement=data['question_statement'],
+            option1=data['option1'],
+            option2=data['option2'],
+            option3=data['option3'],
+            option4=data['option4'],
+            correct_answer=data['correct_answer']
+        )
+        db.session.add(question)
+        db.session.commit()
+        return {'message': 'Question created successfully'}, 201
+
+    @user_required
+    def get(self, question_id):
+        question = Question.query.get_or_404(question_id)
+        return {
+            'id': question.id,
+            'quiz_id': question.quiz_id,
+            'question_statement': question.question_statement,
+            'options': [question.option1, question.option2, question.option3, question.option4]
         }
 
 class ScoreResource(Resource):
-    @user_required
-    def post(self):
-        data = request.get_json()
-        user_id = get_jwt_identity()
-        score = Score(
-            user_id=user_id,
-            quiz_id=data['quiz_id'],
-            total_score=data['total_score']
-        )
-        db.session.add(score)
-        db.session.commit()
-        return {'message': 'Score recorded successfully'}, 201
-
     @user_required
     def get(self):
         user_id = get_jwt_identity()
@@ -109,3 +127,30 @@ class ScoreResource(Resource):
                 'timestamp': score.time_stamp_of_attempt.isoformat()
             } for score in scores]
         }
+
+class SubmitAnswersResource(Resource):
+    @user_required
+    def post(self):
+        data = request.get_json()
+        user_id = get_jwt_identity()
+        quiz_id = data['quiz_id']
+        answers = data['answers']
+
+        quiz = Quiz.query.get_or_404(quiz_id)
+        if not quiz.is_open_today():
+            return {'message': 'Quiz is not open today'}, 400
+
+        total_score = 0
+        for answer in answers:
+            question = Question.query.get_or_404(answer['question_id'])
+            if question.correct_answer == answer['selected_option']:
+                total_score += 1
+
+        score = Score(
+            user_id=user_id,
+            quiz_id=quiz_id,
+            total_score=total_score
+        )
+        db.session.add(score)
+        db.session.commit()
+        return {'message': 'Answers submitted successfully', 'total_score': total_score}, 201

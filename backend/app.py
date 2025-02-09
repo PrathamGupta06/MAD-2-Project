@@ -5,7 +5,7 @@ from extensions import db, jwt
 from config import Config
 from routes import (
     LoginResource, UserRegistrationResource, 
-    SubjectResource, QuizResource, ScoreResource
+    SubjectResource, QuizResource, ScoreResource, SubmitAnswersResource, QuestionResource
 )
 
 def create_app(config_class=Config):
@@ -22,6 +22,8 @@ def create_app(config_class=Config):
     api.add_resource(SubjectResource, '/api/subjects')
     api.add_resource(QuizResource, '/api/quizzes', '/api/quizzes/<int:quiz_id>')
     api.add_resource(ScoreResource, '/api/scores')
+    api.add_resource(SubmitAnswersResource, '/api/submit-answers')
+    api.add_resource(QuestionResource, '/api/questions', '/api/questions/<int:question_id>')
 
     with app.app_context():
         from models import Admin

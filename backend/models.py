@@ -1,5 +1,6 @@
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
+import datetime
 
 class Admin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -53,6 +54,10 @@ class Quiz(db.Model):
     time_duration = db.Column(db.Interval)
     questions = db.relationship('Question', backref='quiz', lazy=True)
     scores = db.relationship('Score', backref='quiz', lazy=True)
+    
+    def is_open_today(self):
+        today = datetime.date.today()
+        return self.date_of_quiz.date() == today
 
 
 class Question(db.Model):
