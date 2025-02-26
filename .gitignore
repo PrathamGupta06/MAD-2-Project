@@ -4,3 +4,4 @@ venv
 instance
 temp.txt
 node_modules
+*.vscode

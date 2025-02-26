@@ -16,6 +16,7 @@ class LoginResource(Resource):
         if admin and admin.check_password(password):
             access_token = create_access_token(
                 identity=admin.id,
+                expires_delta=False,
                 additional_claims={'role': 'admin'}
             )
             return {'access_token': access_token, 'role': 'admin'}, 200
@@ -61,6 +62,23 @@ class SubjectResource(Resource):
         db.session.commit()
         return {'message': 'Subject created successfully'}, 201
 
+    @admin_required
+    def get(self):
+        subjects = Subject.query.all()
+        return {
+            'subjects': [{
+                'id': subject.id,
+                'name': subject.name,
+                'description': subject.description,
+                'chapters': [{
+                    'id': chapter.id,
+                    'name': chapter.name,
+                    'description': chapter.description
+                } for chapter in subject.chapters]
+            } for subject in subjects]
+        }
+
+
 # TODO: Add a chapter resource too where admin can create new chapters and the user can view the chapters
 
 class QuizResource(Resource):
@@ -77,18 +95,38 @@ class QuizResource(Resource):
         return {'message': 'Quiz created successfully'}, 201
 
     @user_required
-    def get(self, quiz_id):
-        quiz = Quiz.query.get_or_404(quiz_id)
-        num_questions = len(quiz.questions)
-        question_ids = [question.id for question in quiz.questions]
-        return {
-            'id': quiz.id,
-            'chapter_id': quiz.chapter_id,
-            'date_of_quiz': quiz.date_of_quiz.isoformat(),
-            'time_duration': str(quiz.time_duration),
-            'num_questions': num_questions,
-            'question_ids': question_ids
-        }
+    def get(self, quiz_id=None):
+        if quiz_id is not None:
+            # Handle user request for specific quiz
+            if not get_jwt_identity():
+                return {'message': 'Unauthorized'}, 401
+                
+            quiz = Quiz.query.get_or_404(quiz_id)
+            num_questions = len(quiz.questions)
+            question_ids = [question.id for question in quiz.questions]
+            return {
+                'id': quiz.id,
+                'chapter_id': quiz.chapter_id,
+                'date_of_quiz': quiz.date_of_quiz.isoformat(),
+                'time_duration': str(quiz.time_duration),
+                'num_questions': num_questions,
+                'question_ids': question_ids
+            }
+        else:
+            # Handle admin request for all quizzes
+            if not get_jwt_identity():
+                return {'message': 'Unauthorized'}, 401
+                
+            quizzes = Quiz.query.all()
+            return {
+                'quizzes': [{
+                    'id': quiz.id,
+                    'chapter_id': quiz.chapter_id,
+                    'date_of_quiz': quiz.date_of_quiz.isoformat(),
+                    'time_duration': str(quiz.time_duration)
+                } for quiz in quizzes]
+            }
+
 
 class QuestionResource(Resource):
     @admin_required

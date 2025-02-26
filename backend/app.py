@@ -28,9 +28,9 @@ def create_app(config_class=Config):
     with app.app_context():
         from models import Admin
         db.create_all()
-        admin = Admin.query.filter_by(username='admin@quizmaster.com').first()
+        admin = Admin.query.filter_by(username='admin').first()
         if not admin:
-            admin = Admin(username='admin@quizmaster.com')
+            admin = Admin(username='admin')
             admin.set_password('adminpass')
             db.session.add(admin)
             db.session.commit()    
