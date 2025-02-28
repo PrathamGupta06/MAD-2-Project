@@ -78,6 +78,21 @@ class SubjectResource(Resource):
             } for subject in subjects]
         }
 
+    @admin_required
+    def put(self, subject_id):
+        subject = Subject.query.get_or_404(subject_id)
+        data = request.get_json()
+        subject.name = data['name']
+        subject.description = data['description']
+        db.session.commit()
+        return {'message': 'Subject updated successfully'}, 200
+
+    @admin_required
+    def delete(self, subject_id):
+        subject = Subject.query.get_or_404(subject_id)
+        db.session.delete(subject)
+        db.session.commit()
+        return {'message': 'Subject deleted successfully'}, 200
 
 # TODO: Add a chapter resource too where admin can create new chapters and the user can view the chapters
 
@@ -97,10 +112,6 @@ class QuizResource(Resource):
     @user_required
     def get(self, quiz_id=None):
         if quiz_id is not None:
-            # Handle user request for specific quiz
-            if not get_jwt_identity():
-                return {'message': 'Unauthorized'}, 401
-                
             quiz = Quiz.query.get_or_404(quiz_id)
             num_questions = len(quiz.questions)
             question_ids = [question.id for question in quiz.questions]
@@ -112,11 +123,7 @@ class QuizResource(Resource):
                 'num_questions': num_questions,
                 'question_ids': question_ids
             }
-        else:
-            # Handle admin request for all quizzes
-            if not get_jwt_identity():
-                return {'message': 'Unauthorized'}, 401
-                
+        else:                
             quizzes = Quiz.query.all()
             return {
                 'quizzes': [{
