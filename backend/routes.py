@@ -95,6 +95,44 @@ class SubjectResource(Resource):
         return {'message': 'Subject deleted successfully'}, 200
 
 # TODO: Add a chapter resource too where admin can create new chapters and the user can view the chapters
+class ChapterResource(Resource):
+    @admin_required
+    def post(self):
+        data = request.get_json()
+        chapter = Chapter(
+            name=data['name'],
+            description=data['description'],
+            subject_id=data['subject_id']
+        )
+        db.session.add(chapter)
+        db.session.commit()
+        return {'message': 'Chapter created successfully'}, 201
+
+    @admin_required
+    def put(self, chapter_id):
+        chapter = Chapter.query.get_or_404(chapter_id)
+        data = request.get_json()
+        chapter.name = data['name']
+        chapter.description = data['description']
+        db.session.commit()
+        return {'message': 'Chapter updated successfully'}, 200
+    
+    @admin_required
+    def delete(self, chapter_id):
+        chapter = Chapter.query.get_or_404(chapter_id)
+        db.session.delete(chapter)
+        db.session.commit()
+        return {'message': 'Chapter deleted successfully'}, 200
+    
+    @user_required
+    def get(self, chapter_id):
+        chapter = Chapter.query.get_or_404(chapter_id)
+        return {
+            'id': chapter.id,
+            'name': chapter.name,
+            'description': chapter.description,
+            'subject_id': chapter.subject_id
+        }
 
 class QuizResource(Resource):
     @admin_required
