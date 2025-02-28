@@ -94,7 +94,6 @@ class SubjectResource(Resource):
         db.session.commit()
         return {'message': 'Subject deleted successfully'}, 200
 
-# TODO: Add a chapter resource too where admin can create new chapters and the user can view the chapters
 class ChapterResource(Resource):
     @admin_required
     def post(self):
@@ -140,7 +139,7 @@ class QuizResource(Resource):
         data = request.get_json()
         quiz = Quiz(
             chapter_id=data['chapter_id'],
-            date_of_quiz=datetime.strptime(data['date_of_quiz'], '%Y-%m-%d %H:%M:%S'),
+            date_of_quiz=datetime.strptime(data['date_of_quiz'], '%Y-%m-%d'),
             time_duration=data['time_duration']
         )
         db.session.add(quiz)
@@ -163,14 +162,22 @@ class QuizResource(Resource):
             }
         else:                
             quizzes = Quiz.query.all()
-            return {
-                'quizzes': [{
+            quizzes_data = []
+            for quiz in quizzes:
+                quiz_data = {
                     'id': quiz.id,
                     'chapter_id': quiz.chapter_id,
                     'date_of_quiz': quiz.date_of_quiz.isoformat(),
                     'time_duration': str(quiz.time_duration)
-                } for quiz in quizzes]
-            }
+                }
+                questions = Question.query.filter_by(quiz_id=quiz.id).all()
+                # Add the quesion_id, question_statement 
+                quiz_data['questions'] = [{
+                    'id': question.id,
+                    'question_statement': question.question_statement
+                } for question in questions]
+                quizzes_data.append(quiz_data)
+            return {'quizzes': quizzes_data}
 
 
 class QuestionResource(Resource):
@@ -190,15 +197,36 @@ class QuestionResource(Resource):
         db.session.commit()
         return {'message': 'Question created successfully'}, 201
 
-    @user_required
+    @admin_required
     def get(self, question_id):
         question = Question.query.get_or_404(question_id)
         return {
             'id': question.id,
             'quiz_id': question.quiz_id,
             'question_statement': question.question_statement,
-            'options': [question.option1, question.option2, question.option3, question.option4]
+            'options': [question.option1, question.option2, question.option3, question.option4],
+            'correct_answer': question.correct_answer
         }
+    
+    @admin_required
+    def put(self, question_id):
+        question = Question.query.get_or_404(question_id)
+        data = request.get_json()
+        question.question_statement = data['question_statement']
+        question.option1 = data['option1']
+        question.option2 = data['option2']
+        question.option3 = data['option3']
+        question.option4 = data['option4']
+        question.correct_answer = data['correct_answer']
+        db.session.commit()
+        return {'message': 'Question updated successfully'}, 200
+
+    @admin_required
+    def delete(self, question_id):
+        question = Question.query.get_or_404(question_id)
+        db.session.delete(question)
+        db.session.commit()
+        return {'message': 'Question deleted successfully'}, 200
 
 class ScoreResource(Resource):
     @user_required
