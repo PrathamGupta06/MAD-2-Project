@@ -23,7 +23,7 @@ class User(db.Model):
     qualification = db.Column(db.String(100), nullable=False)
     dob = db.Column(db.Date, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    scores = db.relationship('Score', backref='user', lazy=True)
+    scores = db.relationship('Score', backref='user', cascade='all, delete-orphan', lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -36,15 +36,15 @@ class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    chapters = db.relationship('Chapter', backref='subject', lazy=True)
+    chapters = db.relationship('Chapter', backref='subject', cascade='all, delete-orphan', lazy=True)
 
 
 class Chapter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
-    quizzes = db.relationship('Quiz', backref='chapter', lazy=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id', ondelete="CASCADE"), nullable=False)
+    quizzes = db.relationship('Quiz', backref='chapter', cascade='all, delete-orphan', lazy=True)
 
 
 class Quiz(db.Model):
@@ -52,8 +52,8 @@ class Quiz(db.Model):
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'), nullable=False)
     date_of_quiz = db.Column(db.DateTime)
     time_duration = db.Column(db.Integer)
-    questions = db.relationship('Question', backref='quiz', lazy=True)
-    scores = db.relationship('Score', backref='quiz', lazy=True)
+    questions = db.relationship('Question', backref='quiz', cascade='all, delete-orphan', lazy=True)
+    scores = db.relationship('Score', backref='quiz', cascade='all, delete-orphan', lazy=True)
     
     def is_open_today(self):
         today = datetime.date.today()
@@ -62,7 +62,7 @@ class Quiz(db.Model):
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.id'), nullable=False)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.id', ondelete='CASCADE'), nullable=False)
     question_statement = db.Column(db.Text, nullable=False)
     option1 = db.Column(db.String(200), nullable=False)
     option2 = db.Column(db.String(200), nullable=False)
@@ -73,7 +73,7 @@ class Question(db.Model):
 
 class Score(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.id', ondelete='CASCADE'), nullable=False)
     total_score = db.Column(db.Integer, nullable=False)
     time_stamp_of_attempt = db.Column(db.DateTime, default=db.func.current_timestamp())

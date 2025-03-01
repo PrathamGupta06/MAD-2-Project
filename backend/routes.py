@@ -146,6 +146,23 @@ class QuizResource(Resource):
         db.session.commit()
         return {'message': 'Quiz created successfully'}, 201
 
+    @admin_required
+    def put(self, quiz_id):
+        quiz = Quiz.query.get_or_404(quiz_id)
+        data = request.get_json()
+        quiz.chapter_id = data['chapter_id']
+        quiz.date_of_quiz = datetime.strptime(data['date_of_quiz'], '%Y-%m-%d')
+        quiz.time_duration = data['time_duration']
+        db.session.commit()
+        return {'message': 'Quiz updated successfully'}, 200
+
+    @admin_required
+    def delete(self, quiz_id):
+        quiz = Quiz.query.get_or_404(quiz_id)
+        db.session.delete(quiz)
+        db.session.commit()
+        return {'message': 'Quiz deleted successfully'}, 200
+
     @user_required
     def get(self, quiz_id=None):
         if quiz_id is not None:
@@ -155,6 +172,9 @@ class QuizResource(Resource):
             return {
                 'id': quiz.id,
                 'chapter_id': quiz.chapter_id,
+                'chapter_name': quiz.chapter.name,
+                'subject_id': quiz.chapter.subject_id,
+                'subject_name': quiz.chapter.subject.name,
                 'date_of_quiz': quiz.date_of_quiz.isoformat(),
                 'time_duration': str(quiz.time_duration),
                 'num_questions': num_questions,
@@ -167,6 +187,9 @@ class QuizResource(Resource):
                 quiz_data = {
                     'id': quiz.id,
                     'chapter_id': quiz.chapter_id,
+                    'chapter_name': quiz.chapter.name,
+                    'subject_id': quiz.chapter.subject_id,
+                    'subject_name': quiz.chapter.subject.name,
                     'date_of_quiz': quiz.date_of_quiz.isoformat(),
                     'time_duration': str(quiz.time_duration)
                 }

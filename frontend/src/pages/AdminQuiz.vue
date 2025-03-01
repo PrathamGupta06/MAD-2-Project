@@ -34,10 +34,17 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">Quiz #{{ quiz.id }}</h5>
-                        <button class="btn btn-sm btn-info text-white" @click="viewQuizDetails(quiz)">
-                            <i class="bi bi-eye"></i> View Details
-                            # TODO: Add a modal for this view Details button
-                        </button>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-info text-white" @click="viewQuiz(quiz)">
+                                <i class="bi bi-eye"></i> View Details
+                            </button>
+                            <button class="btn btn-sm btn-warning text-white" @click="editQuiz(quiz.id)">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                            <button class="btn btn-sm btn-danger" @click="deleteQuiz(quiz.id)">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -75,11 +82,11 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="createQuizModalLabel">Create New Quiz</h5>
+                    <h5 class="modal-title" id="createQuizModalLabel">{{this.editingQuiz ? 'Edit Quiz': 'Create New Quiz'}}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form @submit.prevent="createQuiz">
+                    <form @submit.prevent="submitQuiz">
                         <div class="mb-3">
                             <label for="subjectId" class="form-label">Subject</label>
                             <select class="form-control" id="subjectId" v-model="quizForm.subject_id" required @change="loadChapters">
@@ -108,14 +115,35 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Create Quiz</button>
+                            <button type="submit" class="btn btn-primary">{{ this.editingQuiz ?  'Edit Quiz': 'Create Quiz'}}</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-
+    <!-- Quiz Details Modal -->
+    <div class="modal fade" id="quizDetailsModal" tabindex="-1" aria-labelledby="quizDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="quizDetailsModalLabel">Quiz Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" v-if="selectedQuiz">
+                    <p><strong>Quiz ID:</strong> {{ selectedQuiz.id }}</p>
+                    <p><strong>Subject:</strong> {{ selectedQuiz.subject_name }}</p>
+                    <p><strong>Chapter:</strong> {{ selectedQuiz.chapter_name }}</p>
+                    <p><strong>Date of Quiz:</strong> {{ formatDate(selectedQuiz.date_of_quiz) }}</p>
+                    <p><strong>Time Duration:</strong> {{ selectedQuiz.time_duration }} minutes</p>
+                    <p><strong>Total Questions:</strong> {{ selectedQuiz.questions.length }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Question Modal -->
     <div class="modal fade" id="questionModal" tabindex="-1" aria-labelledby="questionModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -193,6 +221,8 @@ export default {
             },
             editingQuestion: false,
             editingQuestionId: null,
+            editingQuiz: false,
+            editingQuizId: null,
             quizModal: null,
             questionModal: null,
             selectedQuiz: null,
@@ -211,6 +241,19 @@ export default {
         this.getQuizzes();
     },
     methods: {
+        // Data manipulation functions
+        resetForm() {
+            this.quizForm = {
+                subject_id: '',
+                chapter_id: '',
+                date_of_quiz: '',
+                time_duration: ''
+            };
+        },
+        loadChapters() {
+            this.quizForm.chapter_id = '';
+        },
+        // API call functions
         async getSubjects() {
             try {
                 const response = await axios.get('http://localhost:5000/api/subjects', {
@@ -223,21 +266,6 @@ export default {
                 console.error(error);
             }
         },
-        loadChapters() {
-            this.quizForm.chapter_id = '';
-        },
-        resetForm() {
-            this.quizForm = {
-                subject_id: '',
-                chapter_id: '',
-                date_of_quiz: '',
-                time_duration: ''
-            };
-        },
-        logout() {
-            localStorage.removeItem('token');
-            this.$router.push('/login');
-        },
         async getQuizzes() {
             try {
                 const QuizResponse = await axios.get('http://localhost:5000/api/quizzes', {
@@ -269,27 +297,11 @@ export default {
                 };
                 this.editingQuestion = true;
                 this.editingQuestionId = questionId;
-                this.questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
-                this.questionModal.show();
+                this.openModal('questionModal');
             } catch (error) {
                 console.error(error);
                 alert('Failed to load question details');
             }
-        },
-        addQuestion(quizId) {
-            this.questionForm = {
-                quiz_id: quizId,
-                question_statement: '',
-                option1: '',
-                option2: '',
-                option3: '',
-                option4: '',
-                correct_answer: ''
-            };
-            this.editingQuestion = false;
-            this.editingQuestionId = null;
-            this.questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
-            this.questionModal.show();
         },
         async submitQuestion() {
             try {
@@ -306,7 +318,7 @@ export default {
                         }
                     });
                 }
-                this.questionModal.hide();
+                this.closeModal('questionModal');
                 await this.getQuizzes();
             } catch (error) {
                 console.error(error);
@@ -325,23 +337,33 @@ export default {
                 console.error(error);
             }
         },
-        openCreateQuizModal() {
-            this.quizModal = new bootstrap.Modal(document.getElementById('createQuizModal'));
-            this.quizModal.show();
-        },
-        async createQuiz() {
+        async submitQuiz() {
             try {
                 const formattedDate = new Date(this.quizForm.date_of_quiz).toISOString().slice(0, 10);
-                await axios.post('http://localhost:5000/api/quizzes', {
-                    chapter_id: parseInt(this.quizForm.chapter_id),
-                    date_of_quiz: formattedDate,
-                    time_duration: parseInt(this.quizForm.time_duration)
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                this.quizModal.hide();
+                if (this.editingQuiz) {
+                    await axios.put(`http://localhost:5000/api/quizzes/${this.editingQuizId}`, {
+                        subject_id: parseInt(this.quizForm.subject_id),
+                        chapter_id: parseInt(this.quizForm.chapter_id),
+                        date_of_quiz: formattedDate,
+                        time_duration: parseInt(this.quizForm.time_duration)
+                    }, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    });
+                }
+                else {
+                    await axios.post('http://localhost:5000/api/quizzes', {
+                        chapter_id: parseInt(this.quizForm.chapter_id),
+                        date_of_quiz: formattedDate,
+                        time_duration: parseInt(this.quizForm.time_duration)
+                    }, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    });
+                }
+                this.closeModal('createQuizModal');
                 this.resetForm();
                 await this.getQuizzes();
             } catch (error) {
@@ -349,80 +371,55 @@ export default {
                 alert('Failed to create quiz. Please try again.');
             }
         },
-        resetForm() {
-            this.quizForm = {
-                chapter_id: '',
-                date_of_quiz: '',
-                time_duration: ''
-            };
-        },
-        initializeModals() {
-            this.createQuizModal = new bootstrap.Modal(document.getElementById('createQuizModal'));
-            this.questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
-            this.quizDetailsModal = new bootstrap.Modal(document.getElementById('quizDetailsModal'));
-        },
-        viewQuizDetails(quiz) {
-            this.selectedQuiz = quiz;
-            this.quizDetailsModal.show();
-        },
-        methods: {
-            getSubjectName(subjectId) {
-                const subject = this.subjects.find(s => s.id === subjectId);
-                return subject ? subject.name : 'N/A';
-            },
-            getChapterName(chapterId) {
-                for (const subject of this.subjects) {
-                    const chapter = subject.chapters.find(c => c.id === chapterId);
-                    if (chapter) return chapter.name;
-                }
-                return 'N/A';
-            },
-            formatDate(dateString) {
-                return new Date(dateString).toLocaleDateString();
-            },
-        },
-        logout() {
-            localStorage.removeItem('token');
-            this.$router.push('/login');
-        },
-        async getQuizzes() {
+
+        async editQuiz(quizId) {
             try {
-                const QuizResponse = await axios.get('http://localhost:5000/api/quizzes', {
+                const response = await axios.get(`http://localhost:5000/api/quizzes/${quizId}`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 });
-                this.quizzes = QuizResponse.data.quizzes;
-            } catch (error) {
-                console.error(error);
-            }
-        },
-        async editQuestion(questionId) {
-            try {
-                const response = await axios.get(`http://localhost:5000/api/questions/${questionId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                const question = response.data;
-                this.questionForm = {
-                    quiz_id: question.quiz_id,
-                    question_statement: question.question_statement,
-                    option1: question.options[0],
-                    option2: question.options[1],
-                    option3: question.options[2],
-                    option4: question.options[3],
-                    correct_answer: question.correct_answer
+                const quiz = response.data;
+                this.quizForm = {
+                    subject_id: quiz.subject_id,
+                    chapter_id: quiz.chapter_id,
+                    date_of_quiz: quiz.date_of_quiz,
+                    time_duration: quiz.time_duration
                 };
-                this.editingQuestion = true;
-                this.editingQuestionId = questionId;
-                this.questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
-                this.questionModal.show();
+                this.editingQuiz = true;
+                this.editingQuizId = quizId;
+                this.openModal('createQuizModal');
             } catch (error) {
                 console.error(error);
-                alert('Failed to load question details');
             }
         },
+
+        async deleteQuiz(quizId) {
+            try {
+                await axios.delete(`http://localhost:5000/api/quizzes/${quizId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                await this.getQuizzes();
+            } catch (error) {
+                console.error(error);
+                alert('Failed to delete quiz. Please try again.');
+
+            }
+        },
+
+        openModal(modalId) {
+            const modal = new bootstrap.Modal(document.getElementById(modalId));
+            modal.show();
+        },
+        closeModal(modalId) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+            if (modal) {
+                modal.hide();
+            }
+        },
+
         addQuestion(quizId) {
             this.questionForm = {
                 quiz_id: quizId,
@@ -435,82 +432,27 @@ export default {
             };
             this.editingQuestion = false;
             this.editingQuestionId = null;
-            this.questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
-            this.questionModal.show();
-        },
-        async submitQuestion() {
-            try {
-                if (this.editingQuestion) {
-                    await axios.put(`http://localhost:5000/api/questions/${this.editingQuestionId}`, this.questionForm, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        }
-                    });
-                } else {
-                    await axios.post('http://localhost:5000/api/questions', this.questionForm, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        }
-                    });
-                }
-                this.questionModal.hide();
-                await this.getQuizzes();
-            } catch (error) {
-                console.error(error);
-                alert(`Failed to ${this.editingQuestion ? 'update' : 'create'} question`);
-            }
-        },
-        async deleteQuestion(questionId) {
-            try {
-                await axios.delete(`http://localhost:5000/api/questions/${questionId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                await this.getQuizzes();
-            } catch (error) {
-                console.error(error);
-            }
+            this.openModal('questionModal');
         },
         openCreateQuizModal() {
-            this.quizModal = new bootstrap.Modal(document.getElementById('createQuizModal'));
-            this.quizModal.show();
+            this.resetForm();
+            this.openModal('createQuizModal');
         },
-        async createQuiz() {
-            try {
-                const formattedDate = new Date(this.quizForm.date_of_quiz).toISOString().slice(0, 10);
-                await axios.post('http://localhost:5000/api/quizzes', {
-                    chapter_id: parseInt(this.quizForm.chapter_id),
-                    date_of_quiz: formattedDate,
-                    time_duration: parseInt(this.quizForm.time_duration)
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                this.quizModal.hide();
-                this.resetForm();
-                await this.getQuizzes();
-            } catch (error) {
-                console.error(error);
-                alert('Failed to create quiz. Please try again.');
-            }
-        },
-        resetForm() {
-            this.quizForm = {
-                chapter_id: '',
-                date_of_quiz: '',
-                time_duration: ''
-            };
-        },
-        initializeModals() {
-            this.createQuizModal = new bootstrap.Modal(document.getElementById('createQuizModal'));
-            this.questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
-            this.quizDetailsModal = new bootstrap.Modal(document.getElementById('quizDetailsModal'));
-        },
-        viewQuizDetails(quiz) {
+        viewQuiz(quiz) {
             this.selectedQuiz = quiz;
-            this.quizDetailsModal.show();
+            this.openModal('quizDetailsModal');
+        },
+        // View related functions
+        getSubjectName(subjectId) {
+            const subject = this.subjects.find(s => s.id === subjectId);
+            return subject ? subject.name : 'N/A';
+        },
+        getChapterName(chapterId) {
+            for (const subject of this.subjects) {
+                const chapter = subject.chapters.find(c => c.id === chapterId);
+                if (chapter) return chapter.name;
+            }
+            return 'N/A';
         },
         formatDate(dateString) {
             return new Date(dateString).toLocaleString();
@@ -518,260 +460,8 @@ export default {
         logout() {
             localStorage.removeItem('token');
             this.$router.push('/login');
-        },
-        async getQuizzes() {
-            try {
-                const QuizResponse = await axios.get('http://localhost:5000/api/quizzes', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                this.quizzes = QuizResponse.data.quizzes;
-            } catch (error) {
-                console.error(error);
-            }
-        },
-        async editQuestion(questionId) {
-            try {
-                const response = await axios.get(`http://localhost:5000/api/questions/${questionId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                const question = response.data;
-                this.questionForm = {
-                    quiz_id: question.quiz_id,
-                    question_statement: question.question_statement,
-                    option1: question.options[0],
-                    option2: question.options[1],
-                    option3: question.options[2],
-                    option4: question.options[3],
-                    correct_answer: question.correct_answer
-                };
-                this.editingQuestion = true;
-                this.editingQuestionId = questionId;
-                this.questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
-                this.questionModal.show();
-            } catch (error) {
-                console.error(error);
-                alert('Failed to load question details');
-            }
-        },
-        addQuestion(quizId) {
-            this.questionForm = {
-                quiz_id: quizId,
-                question_statement: '',
-                option1: '',
-                option2: '',
-                option3: '',
-                option4: '',
-                correct_answer: ''
-            };
-            this.editingQuestion = false;
-            this.editingQuestionId = null;
-            this.questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
-            this.questionModal.show();
-        },
-        async submitQuestion() {
-            try {
-                if (this.editingQuestion) {
-                    await axios.put(`http://localhost:5000/api/questions/${this.editingQuestionId}`, this.questionForm, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        }
-                    });
-                } else {
-                    await axios.post('http://localhost:5000/api/questions', this.questionForm, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        }
-                    });
-                }
-                this.questionModal.hide();
-                await this.getQuizzes();
-            } catch (error) {
-                console.error(error);
-                alert(`Failed to ${this.editingQuestion ? 'update' : 'create'} question`);
-            }
-        },
-        async deleteQuestion(questionId) {
-            try {
-                await axios.delete(`http://localhost:5000/api/questions/${questionId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                await this.getQuizzes();
-            } catch (error) {
-                console.error(error);
-            }
-        },
-        openCreateQuizModal() {
-            this.quizModal = new bootstrap.Modal(document.getElementById('createQuizModal'));
-            this.quizModal.show();
-        },
-        async createQuiz() {
-            try {
-                const formattedDate = new Date(this.quizForm.date_of_quiz).toISOString().slice(0, 10);
-                await axios.post('http://localhost:5000/api/quizzes', {
-                    chapter_id: parseInt(this.quizForm.chapter_id),
-                    date_of_quiz: formattedDate,
-                    time_duration: parseInt(this.quizForm.time_duration)
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                this.quizModal.hide();
-                this.resetForm();
-                await this.getQuizzes();
-            } catch (error) {
-                console.error(error);
-                alert('Failed to create quiz. Please try again.');
-            }
-        },
-        resetForm() {
-            this.quizForm = {
-                chapter_id: '',
-                date_of_quiz: '',
-                time_duration: ''
-            };
-        },
-        initializeModals() {
-            this.createQuizModal = new bootstrap.Modal(document.getElementById('createQuizModal'));
-            this.questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
-            this.quizDetailsModal = new bootstrap.Modal(document.getElementById('quizDetailsModal'));
-        },
-        viewQuizDetails(quiz) {
-            this.selectedQuiz = quiz;
-            this.quizDetailsModal.show();
-        },
-        formatDate(dateString) {
-            return new Date(dateString).toLocaleString();
-        },
-        logout() {
-            localStorage.removeItem('token');
-            this.$router.push('/login');
-        },
-        async getQuizzes() {
-            try {
-                const QuizResponse = await axios.get('http://localhost:5000/api/quizzes', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                this.quizzes = QuizResponse.data.quizzes;
-            } catch (error) {
-                console.error(error);
-            }
-        },
-        async editQuestion(questionId) {
-            try {
-                const response = await axios.get(`http://localhost:5000/api/questions/${questionId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                const question = response.data;
-                this.questionForm = {
-                    quiz_id: question.quiz_id,
-                    question_statement: question.question_statement,
-                    option1: question.options[0],
-                    option2: question.options[1],
-                    option3: question.options[2],
-                    option4: question.options[3],
-                    correct_answer: question.correct_answer
-                };
-                this.editingQuestion = true;
-                this.editingQuestionId = questionId;
-                this.questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
-                this.questionModal.show();
-            } catch (error) {
-                console.error(error);
-                alert('Failed to load question details');
-            }
-        },
-        addQuestion(quizId) {
-            this.questionForm = {
-                quiz_id: quizId,
-                question_statement: '',
-                option1: '',
-                option2: '',
-                option3: '',
-                option4: '',
-                correct_answer: ''
-            };
-            this.editingQuestion = false;
-            this.editingQuestionId = null;
-            this.questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
-            this.questionModal.show();
-        },
-        async submitQuestion() {
-            try {
-                if (this.editingQuestion) {
-                    await axios.put(`http://localhost:5000/api/questions/${this.editingQuestionId}`, this.questionForm, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        }
-                    });
-                } else {
-                    await axios.post('http://localhost:5000/api/questions', this.questionForm, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        }
-                    });
-                }
-                this.questionModal.hide();
-                await this.getQuizzes();
-            } catch (error) {
-                console.error(error);
-                alert(`Failed to ${this.editingQuestion ? 'update' : 'create'} question`);
-            }
-        },
-        async deleteQuestion(questionId) {
-            try {
-                await axios.delete(`http://localhost:5000/api/questions/${questionId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                await this.getQuizzes();
-            } catch (error) {
-                console.error(error);
-            }
-        },
-        openCreateQuizModal() {
-            this.quizModal = new bootstrap.Modal(document.getElementById('createQuizModal'));
-            this.quizModal.show();
-        },
-        async createQuiz() {
-            try {
-                const formattedDate = new Date(this.quizForm.date_of_quiz).toISOString().slice(0, 10);
-                await axios.post('http://localhost:5000/api/quizzes', {
-                    chapter_id: parseInt(this.quizForm.chapter_id),
-                    date_of_quiz: formattedDate,
-                    time_duration: parseInt(this.quizForm.time_duration)
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                this.quizModal.hide();
-                this.resetForm();
-                await this.getQuizzes();
-            } catch (error) {
-                console.error(error);
-                alert('Failed to create quiz. Please try again.');
-            }
-        },
-        resetForm() {
-            this.quizForm = {
-                chapter_id: '',
-                date_of_quiz: '',
-                time_duration: ''
-            };
         }
-    },
+    }
 };
 </script>
 
