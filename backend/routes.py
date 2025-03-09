@@ -25,6 +25,7 @@ class LoginResource(Resource):
         if user and user.check_password(password):
             access_token = create_access_token(
                 identity=user.id,
+                expires_delta=False,
                 additional_claims={'role': 'user'}
             )
             return {'access_token': access_token, 'role': 'user'}, 200
@@ -293,3 +294,70 @@ class SubmitAnswersResource(Resource):
         db.session.add(score)
         db.session.commit()
         return {'message': 'Answers submitted successfully', 'total_score': total_score}, 201
+
+
+
+class UpcomingQuizzesResource(Resource):
+    @user_required
+    def get(self):
+        # try:
+        current_time = datetime.now()
+        today_quizzes = Quiz.query.filter(
+            Quiz.date_of_quiz == current_time.date(),
+        ).order_by(Quiz.date_of_quiz.asc()).all()
+
+        upcoming_quizzes = Quiz.query.filter(
+            Quiz.date_of_quiz > current_time.date(),
+        ).order_by(Quiz.date_of_quiz.asc()).all()
+        
+        #TODO: Add a status: attempted/not attempted if not attempted then show the button otherwise just show that already attempted 
+        
+        today_quizzes_response = [
+            {
+                'id': quiz.id,
+                'chapter_name': quiz.chapter.name,
+                'subject_name': quiz.chapter.subject.name,
+                'date_of_quiz': quiz.date_of_quiz.isoformat(),
+                'time_duration': str(quiz.time_duration)
+            }
+            for quiz in today_quizzes
+        ]
+        upcoming_quizzes_response = [
+            {
+                'id': quiz.id,
+                'chapter_name': quiz.chapter.name,
+                'subject_name': quiz.chapter.subject.name,
+                'date_of_quiz': quiz.date_of_quiz.isoformat(),
+                'time_duration': str(quiz.time_duration)
+            }
+            for quiz in upcoming_quizzes
+        ]
+        return {
+            'today_quizzes': today_quizzes_response,
+            'upcoming_quizzes': upcoming_quizzes_response
+        }
+            
+        # except Exception as e:
+        #     return {'message': 'Failed to fetch upcoming quizzes', 'error': str(e)}, 500
+
+
+class QuizQuestionsResource(Resource):
+    @user_required
+    def get(self, quiz_id):
+        quiz = Quiz.query.get_or_404(quiz_id)
+        return {
+            'id': quiz.id,
+            'chapter_name': quiz.chapter.name,
+            'subject_name': quiz.chapter.subject.name,
+            'time_duration': quiz.time_duration,
+            'questions': [{
+                'id': question.id,
+                'question_statement': question.question_statement,
+                'options': [
+                    question.option1,
+                    question.option2,
+                    question.option3,
+                    question.option4
+                ]
+            } for question in quiz.questions]
+        }

@@ -1,8 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Login from './pages/auth/Login.vue';
-import Register from './pages/auth/Register.vue';
+import Login from './pages/Login.vue';
+import Register from './pages/Register.vue';
 import AdminDashboard from './pages/AdminDashboard.vue';
 import AdminQuiz from './pages/AdminQuiz.vue';
+import AdminSummary from './pages/AdminSummary.vue';
+
+import UserDashboard from './pages/UserDashboard.vue';
+import UserAttemptQuiz from './pages/UserAttemptQuiz.vue';
+
 const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: Login },
@@ -16,7 +21,22 @@ const routes = [
     path: '/admin/quiz',
     component: AdminQuiz,
     meta: { requiresAuth: true }
-  }
+  },
+  {
+    path: '/admin/summary',
+    component: AdminSummary,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/user/dashboard',
+    component: UserDashboard,
+    meta: { requiresAuth: true }
+  },
+{
+    path: '/user/quiz/:id',
+    component: UserAttemptQuiz,
+    meta: { requiresAuth: true }
+}
 ];
 
 const router = createRouter({

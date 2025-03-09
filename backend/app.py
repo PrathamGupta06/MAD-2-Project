@@ -6,7 +6,7 @@ from config import Config
 from routes import (
     LoginResource, UserRegistrationResource, 
     SubjectResource, QuizResource, ScoreResource, SubmitAnswersResource, QuestionResource,
-    ChapterResource
+    ChapterResource, UpcomingQuizzesResource, QuizQuestionsResource
 )
 
 def create_app(config_class=Config):
@@ -22,10 +22,12 @@ def create_app(config_class=Config):
     api.add_resource(UserRegistrationResource, '/api/register')
     api.add_resource(SubjectResource, '/api/subjects', '/api/subjects/<int:subject_id>')
     api.add_resource(QuizResource, '/api/quizzes', '/api/quizzes/<int:quiz_id>')
+    api.add_resource(UpcomingQuizzesResource, '/api/quizzes/upcoming')
     api.add_resource(ScoreResource, '/api/scores')
     api.add_resource(SubmitAnswersResource, '/api/submit-answers')
     api.add_resource(QuestionResource, '/api/questions', '/api/questions/<int:question_id>')
     api.add_resource(ChapterResource, '/api/chapters', '/api/chapters/<int:chapter_id>')
+    api.add_resource(QuizQuestionsResource, '/api/user/quizQuestions/<int:quiz_id>')
     with app.app_context():
         from models import Admin
         db.create_all()

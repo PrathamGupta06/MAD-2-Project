@@ -50,14 +50,14 @@ class Chapter(db.Model):
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'), nullable=False)
-    date_of_quiz = db.Column(db.DateTime)
+    date_of_quiz = db.Column(db.Date)
     time_duration = db.Column(db.Integer)
     questions = db.relationship('Question', backref='quiz', cascade='all, delete-orphan', lazy=True)
     scores = db.relationship('Score', backref='quiz', cascade='all, delete-orphan', lazy=True)
     
     def is_open_today(self):
         today = datetime.date.today()
-        return self.date_of_quiz.date() == today
+        return self.date_of_quiz == today
 
 
 class Question(db.Model):

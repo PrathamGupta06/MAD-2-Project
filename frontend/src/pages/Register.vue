@@ -23,6 +23,7 @@
           <input type="text" v-model="qualification" class="form-control" required />
         </div>
         <button type="submit" class="btn btn-primary">Register</button>
+        <p>Already have an account? <a href="/login">Login</a></p>
       </form>
     </div>
   </template>

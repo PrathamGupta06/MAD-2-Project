@@ -107,7 +107,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="quizDate" class="form-label">Date of Quiz</label>
-                            <input type="datetime-local" class="form-control" id="quizDate" v-model="quizForm.date_of_quiz" required>
+                            <input type="date" class="form-control" id="quizDate" v-model="quizForm.date_of_quiz" required>
                         </div>
                         <div class="mb-3">
                             <label for="timeDuration" class="form-label">Time Duration (minutes)</label>

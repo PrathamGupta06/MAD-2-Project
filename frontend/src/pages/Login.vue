@@ -11,6 +11,7 @@
           <input type="password" v-model="password" class="form-control" required />
         </div>
         <button type="submit" class="btn btn-primary">Login</button>
+        <p>Don't have an account? <a href="/register">Register here</a></p>
       </form>
     </div>
   </template>
@@ -40,7 +41,7 @@
             this.$router.push('/admin/dashboard');
             return;
           }
-          this.$router.push('/dashboard');
+          this.$router.push('/user/dashboard');
         } catch (error) {
           alert('Invalid credentials');
         }
