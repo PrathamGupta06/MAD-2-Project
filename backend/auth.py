@@ -14,11 +14,8 @@ def admin_required(fn):
 def user_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        print('here')
         verify_jwt_in_request()
-        print('there')
         claims = get_jwt()
-        print(claims)
         if claims.get("role") == "user" or claims.get("role") == "admin":
             return fn(*args, **kwargs)
         return {"message": "User or admin access required"}, 403

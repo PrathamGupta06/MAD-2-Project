@@ -136,18 +136,6 @@ class ChapterResource(Resource):
 
 class QuizResource(Resource):
     @admin_required
-    def post(self):
-        data = request.get_json()
-        quiz = Quiz(
-            chapter_id=data['chapter_id'],
-            date_of_quiz=datetime.strptime(data['date_of_quiz'], '%Y-%m-%d'),
-            time_duration=data['time_duration']
-        )
-        db.session.add(quiz)
-        db.session.commit()
-        return {'message': 'Quiz created successfully'}, 201
-
-    @admin_required
     def put(self, quiz_id):
         quiz = Quiz.query.get_or_404(quiz_id)
         data = request.get_json()
@@ -165,43 +153,58 @@ class QuizResource(Resource):
         return {'message': 'Quiz deleted successfully'}, 200
 
     @user_required
-    def get(self, quiz_id=None):
-        if quiz_id is not None:
-            quiz = Quiz.query.get_or_404(quiz_id)
-            num_questions = len(quiz.questions)
-            question_ids = [question.id for question in quiz.questions]
-            return {
+    def get(self, quiz_id):
+        quiz = Quiz.query.get_or_404(quiz_id)
+        num_questions = len(quiz.questions)
+        question_ids = [question.id for question in quiz.questions]
+        return {
+            'id': quiz.id,
+            'chapter_id': quiz.chapter_id,
+            'chapter_name': quiz.chapter.name,
+            'subject_id': quiz.chapter.subject_id,
+            'subject_name': quiz.chapter.subject.name,
+            'date_of_quiz': quiz.date_of_quiz.isoformat(),
+            'time_duration': str(quiz.time_duration),
+            'num_questions': num_questions,
+            'question_ids': question_ids
+        }
+
+
+class QuizzesResource(Resource):
+    @admin_required
+    def post(self):
+        data = request.get_json()
+        quiz = Quiz(
+            chapter_id=data['chapter_id'],
+            date_of_quiz=datetime.strptime(data['date_of_quiz'], '%Y-%m-%d'),
+            time_duration=data['time_duration']
+        )
+        db.session.add(quiz)
+        db.session.commit()
+        return {'message': 'Quiz created successfully'}, 201
+
+    @user_required
+    def get(self):
+        quizzes = Quiz.query.all()
+        quizzes_data = []
+        for quiz in quizzes:
+            quiz_data = {
                 'id': quiz.id,
                 'chapter_id': quiz.chapter_id,
                 'chapter_name': quiz.chapter.name,
                 'subject_id': quiz.chapter.subject_id,
                 'subject_name': quiz.chapter.subject.name,
                 'date_of_quiz': quiz.date_of_quiz.isoformat(),
-                'time_duration': str(quiz.time_duration),
-                'num_questions': num_questions,
-                'question_ids': question_ids
+                'time_duration': str(quiz.time_duration)
             }
-        else:                
-            quizzes = Quiz.query.all()
-            quizzes_data = []
-            for quiz in quizzes:
-                quiz_data = {
-                    'id': quiz.id,
-                    'chapter_id': quiz.chapter_id,
-                    'chapter_name': quiz.chapter.name,
-                    'subject_id': quiz.chapter.subject_id,
-                    'subject_name': quiz.chapter.subject.name,
-                    'date_of_quiz': quiz.date_of_quiz.isoformat(),
-                    'time_duration': str(quiz.time_duration)
-                }
-                questions = Question.query.filter_by(quiz_id=quiz.id).all()
-                # Add the quesion_id, question_statement 
-                quiz_data['questions'] = [{
-                    'id': question.id,
-                    'question_statement': question.question_statement
-                } for question in questions]
-                quizzes_data.append(quiz_data)
-            return {'quizzes': quizzes_data}
+            questions = Question.query.filter_by(quiz_id=quiz.id).all()
+            # Add the quesion_id, question_statement 
+            quiz_data['questions'] = [{
+                'id': question.id,
+                'question_statement': question.question_statement
+            } for question in questions]
+            quizzes_data.append(quiz_data)
+        return {'quizzes': quizzes_data}
 
 
 class QuestionResource(Resource):
@@ -300,28 +303,30 @@ class SubmitAnswersResource(Resource):
 class UpcomingQuizzesResource(Resource):
     @user_required
     def get(self):
-        # try:
+        user_id = get_jwt_identity()
         current_time = datetime.now()
+        all_quizzes = Quiz.query.all()
+        
         today_quizzes = Quiz.query.filter(
             Quiz.date_of_quiz == current_time.date(),
-        ).order_by(Quiz.date_of_quiz.asc()).all()
+        ).all()
 
         upcoming_quizzes = Quiz.query.filter(
             Quiz.date_of_quiz > current_time.date(),
         ).order_by(Quiz.date_of_quiz.asc()).all()
-        
-        #TODO: Add a status: attempted/not attempted if not attempted then show the button otherwise just show that already attempted 
-        
+       
         today_quizzes_response = [
             {
                 'id': quiz.id,
                 'chapter_name': quiz.chapter.name,
                 'subject_name': quiz.chapter.subject.name,
                 'date_of_quiz': quiz.date_of_quiz.isoformat(),
-                'time_duration': str(quiz.time_duration)
+                'time_duration': str(quiz.time_duration),
+                'attempted': True if Score.query.filter_by(quiz_id = quiz.id, user_id = user_id).all() else False
             }
             for quiz in today_quizzes
         ]
+        
         upcoming_quizzes_response = [
             {
                 'id': quiz.id,
@@ -336,9 +341,6 @@ class UpcomingQuizzesResource(Resource):
             'today_quizzes': today_quizzes_response,
             'upcoming_quizzes': upcoming_quizzes_response
         }
-            
-        # except Exception as e:
-        #     return {'message': 'Failed to fetch upcoming quizzes', 'error': str(e)}, 500
 
 
 class QuizQuestionsResource(Resource):

@@ -11,7 +11,7 @@
                         <router-link class="nav-link" to="/user/dashboard">Home</router-link>
                     </li>
                     <li class="nav-item">
-                        <router-link class="nav-link" to="/user/quiz">Quiz</router-link>
+                        <router-link class="nav-link" to="/user/quiz">Scores</router-link>
                     </li>
                     <li class="nav-item">
                         <router-link class="nav-link" to="/user/summary">Summary</router-link>
@@ -45,7 +45,8 @@
                             <td>{{ quiz.subject_name }}</td>
                             <td>{{ quiz.date_of_quiz }}</td>
                             <td>{{ quiz.time_duration }}</td>
-                            <td>
+                            <td v-if="quiz.attempted"> Already Attempted this quiz </td>
+                            <td v-else>
                                 <router-link :to="`/user/quiz/${quiz.id}`" class="btn btn-primary">Attempt Quiz</router-link>
                             </td>
                         </tr>
