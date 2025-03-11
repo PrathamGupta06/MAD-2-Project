@@ -370,3 +370,97 @@ class QuizQuestionsResource(Resource):
                 ]
             } for question in quiz.questions]
         }
+
+class UserSummaryResource(Resource):
+    @user_required
+    def get(self):
+        user_id = get_jwt_identity()
+
+        subjects = Subject.query.all()
+        subject_data = []
+
+        for subject in subjects:
+            quiz_count = sum(len(chapter.quizzes) for chapter in subject.chapters)
+
+            attempted_count = db.session.query(Score).join(Quiz).join(Chapter) \
+                .filter(Score.user_id == user_id) \
+                .filter(Chapter.subject_id == subject.id).count()
+
+            subject_data.append({
+                'subject_name': subject.name,
+                'total_quizzes': quiz_count,
+                'attempted_quizzes': attempted_count
+            })
+
+        current_year = datetime.now().year
+        monthly_data = [
+            {
+                'month': datetime(current_year, month, 1).strftime('%B'),
+                'attempts': db.session.query(Score)
+                .filter(Score.user_id == user_id)
+                .filter(db.extract('month', Score.time_stamp_of_attempt) == month)
+                .filter(db.extract('year', Score.time_stamp_of_attempt) == current_year)
+                .count()
+            }
+            for month in range(1, 13)
+        ]
+
+        return {
+            'subject_data': subject_data,
+            'monthly_data': monthly_data
+        }
+
+
+class AdminSummaryResource(Resource):
+    @admin_required
+    def get(self):
+        subjects = Subject.query.all()
+        subject_stats = []
+
+        for subject in subjects:
+            quiz_ids = [quiz.id for chapter in subject.chapters for quiz in chapter.quizzes]
+
+            if not quiz_ids:
+                subject_stats.append({
+                    'subject_name': subject.name,
+                    'average_score': 0,
+                    'total_attempts': 0,
+                    'total_questions': 0
+                })
+                continue
+
+            scores = Score.query.filter(Score.quiz_id.in_(quiz_ids)).all()
+            total_questions = db.session.query(db.func.count(Question.id)) \
+                .filter(Question.quiz_id.in_(quiz_ids)).scalar() or 0
+
+            average_score = round(sum(score.total_score for score in scores) / len(scores), 2) if scores else 0
+
+            subject_stats.append({
+                'subject_name': subject.name,
+                'average_score': average_score,
+                'total_attempts': len(scores),
+                'total_questions': total_questions
+            })
+
+        total_attempts_per_subject = [
+            {
+                'subject_name': subject.name,
+                'total_attempts': db.session.query(Score)
+                .join(Quiz).join(Chapter)
+                .filter(Chapter.subject_id == subject.id)
+                .count()
+            }
+            for subject in subjects
+        ]
+
+        total_users = User.query.count()
+        total_attempts = Score.query.count()
+
+        return {
+            'subject_stats': subject_stats,
+            'quiz_attempts_per_subject': total_attempts_per_subject,
+            'user_stats': {
+                'total_users': total_users,
+                'total_attempts': total_attempts
+            }
+        }
