@@ -17,6 +17,14 @@
                         <router-link class="nav-link" to="/admin/summary">Summary</router-link>
                     </li>
                 </ul>
+                <form class="d-flex me-3">
+                    <input 
+                        class="form-control me-2" 
+                        type="search" 
+                        placeholder="Search subjects or chapters..." 
+                        v-model="searchQuery"
+                        @input="handleSearch">
+                </form>
                 <button class="btn btn-outline-danger" @click="logout">Logout</button>
             </div>
         </div>
@@ -234,7 +242,8 @@ export default {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 });
-                this.subjects = subjectsResponse.data.subjects;
+                this.allSubjects = subjectsResponse.data.subjects;
+                this.subjects = [...this.allSubjects];
                 this.error.subjects = null;
             } catch (error) {
                 this.error.subjects = 'Failed to load subjects';
@@ -242,6 +251,24 @@ export default {
             } finally {
                 this.loading.subjects = false;
             }
+        },
+        handleSearch() {
+            const query = this.searchQuery.toLowerCase();
+            if (!query) {
+                this.subjects = [...this.allSubjects];
+                return;
+            }
+            this.subjects = this.allSubjects.filter(subject => {
+                const matchesSubject = subject.name.toLowerCase().includes(query) ||
+                                     subject.description.toLowerCase().includes(query);
+                
+                const matchesChapter = subject.chapters.some(chapter =>
+                    chapter.name.toLowerCase().includes(query) ||
+                    chapter.description.toLowerCase().includes(query)
+                );
+
+                return matchesSubject || matchesChapter;
+            });
         },
         logout() {
             localStorage.removeItem('token');
