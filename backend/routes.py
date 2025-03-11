@@ -211,6 +211,10 @@ class QuestionResource(Resource):
     @admin_required
     def post(self):
         data = request.get_json()
+
+        if data['correct_answer'] not in (1, 2, 3, 4):
+            return {'message': 'Invalid Correct Answer (Select one of 1, 2, 3, 4).'}, 400
+
         question = Question(
             quiz_id=data['quiz_id'],
             question_statement=data['question_statement'],
@@ -285,7 +289,7 @@ class SubmitAnswersResource(Resource):
 
         total_score = 0
         for answer in answers:
-            question = Question.query.get_or_404(answer['question_id'])
+            question = Question.query.filter_by(id=answer['question_id'], quiz_id=quiz_id).first()
             if question.correct_answer == answer['selected_option']:
                 total_score += 1
 

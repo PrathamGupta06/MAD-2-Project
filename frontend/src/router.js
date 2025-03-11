@@ -7,6 +7,8 @@ import AdminSummary from './pages/AdminSummary.vue';
 
 import UserDashboard from './pages/UserDashboard.vue';
 import UserAttemptQuiz from './pages/UserAttemptQuiz.vue';
+import UserScores from './pages/UserScores.vue';
+import UserSummary from './pages/UserSummary.vue';
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -32,11 +34,21 @@ const routes = [
     component: UserDashboard,
     meta: { requiresAuth: true }
   },
-{
+  {
+    path: '/user/scores',
+    component: UserScores,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/user/summary',
+    component: UserSummary,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/user/quiz/:id',
     component: UserAttemptQuiz,
     meta: { requiresAuth: true }
-}
+  }
 ];
 
 const router = createRouter({

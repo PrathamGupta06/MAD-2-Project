@@ -178,10 +178,10 @@
                             <label for="correctAnswer" class="form-label">Correct Answer</label>
                             <select class="form-control" id="correctAnswer" v-model="questionForm.correct_answer" required>
                                 <option value="">Select correct answer</option>
-                                <option :value="questionForm.option1">Option 1</option>
-                                <option :value="questionForm.option2">Option 2</option>
-                                <option :value="questionForm.option3">Option 3</option>
-                                <option :value="questionForm.option4">Option 4</option>
+                                <option :value=1>Option 1</option>
+                                <option :value=2>Option 2</option>
+                                <option :value=3>Option 3</option>
+                                <option :value=4>Option 4</option>
                             </select>
                         </div>
                         <div class="modal-footer">
@@ -241,7 +241,6 @@ export default {
         this.getQuizzes();
     },
     methods: {
-        // Data manipulation functions
         resetForm() {
             this.quizForm = {
                 subject_id: '',
@@ -253,7 +252,7 @@ export default {
         loadChapters() {
             this.quizForm.chapter_id = '';
         },
-        // API call functions
+
         async getSubjects() {
             try {
                 const response = await axios.get('http://localhost:5000/api/subjects', {
@@ -436,6 +435,7 @@ export default {
         },
         openCreateQuizModal() {
             this.resetForm();
+            this.editingQuiz = false;
             this.openModal('createQuizModal');
         },
         viewQuiz(quiz) {

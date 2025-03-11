@@ -11,7 +11,7 @@
                         <router-link class="nav-link" to="/user/dashboard">Home</router-link>
                     </li>
                     <li class="nav-item">
-                        <router-link class="nav-link" to="/user/quiz">Scores</router-link>
+                        <router-link class="nav-link" to="/user/scores">Scores</router-link>
                     </li>
                     <li class="nav-item">
                         <router-link class="nav-link" to="/user/summary">Summary</router-link>

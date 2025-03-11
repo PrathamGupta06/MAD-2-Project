@@ -128,9 +128,13 @@ export default {
             Authorization: `Bearer ${localStorage.getItem('token')}`
           }
         });
-        this.$router.push('/user/dashboard');
+        this.$router.push('/user/scores');
       } catch (error) {
-        this.error = 'Failed to submit answers';
+        if (error.response && error.response.status === 400) {
+          this.error = error.response.data.message;
+        } else {
+          this.error = 'Failed to submit answers';
+        }
         console.error(error);
       }
     }

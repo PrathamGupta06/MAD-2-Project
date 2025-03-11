@@ -68,7 +68,7 @@ class Question(db.Model):
     option2 = db.Column(db.String(200), nullable=False)
     option3 = db.Column(db.String(200), nullable=False)
     option4 = db.Column(db.String(200), nullable=False)
-    correct_answer = db.Column(db.String(200), nullable=False)
+    correct_answer = db.Column(db.Integer, nullable=False)
 
 
 class Score(db.Model):
@@ -76,4 +76,5 @@ class Score(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.id', ondelete='CASCADE'), nullable=False)
     total_score = db.Column(db.Integer, nullable=False)
-    time_stamp_of_attempt = db.Column(db.DateTime, default=db.func.current_timestamp())
+    time_stamp_of_attempt = db.Column(db.DateTime, default=lambda: datetime.datetime.now())
+    
