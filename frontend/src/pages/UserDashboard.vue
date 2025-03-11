@@ -25,7 +25,6 @@
     <div class="container mt-4">
         <div v-if="loading" class="text-center">Loading upcoming quizzes...</div>
         <div v-if="error" class="alert alert-danger">{{ error }}</div>
-
         <div v-if="todayQuizzes.length > 0">
             <h3>Today's Quizzes</h3>
             <div class="table-responsive">
@@ -45,9 +44,10 @@
                             <td>{{ quiz.subject_name }}</td>
                             <td>{{ quiz.date_of_quiz }}</td>
                             <td>{{ quiz.time_duration }}</td>
-                            <td v-if="quiz.attempted"> Already Attempted this quiz </td>
-                            <td v-else>
-                                <router-link :to="`/user/quiz/${quiz.id}`" class="btn btn-primary">Attempt Quiz</router-link>
+                            <td>
+                                <button class="btn btn-info btn-sm me-2" @click="showQuizDetails(quiz)">View Details</button>
+                                <router-link v-if="!quiz.attempted" :to="`/user/quiz/${quiz.id}`" class="btn btn-primary btn-sm">Attempt Quiz</router-link>
+                                <span v-else class="text-muted">Already Attempted</span>
                             </td>
                         </tr>
                     </tbody>
@@ -57,6 +57,7 @@
         <div v-else>
             <h3>No quizzes today</h3>
         </div>
+
         <div v-if="upcomingQuizzes.length > 0">
             <h3>Upcoming Quizzes</h3>
             <div class="table-responsive">
@@ -67,6 +68,7 @@
                             <th>Subject</th>
                             <th>Date</th>
                             <th>Duration (mins)</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -75,9 +77,42 @@
                             <td>{{ quiz.subject_name }}</td>
                             <td>{{ quiz.date_of_quiz }}</td>
                             <td>{{ quiz.time_duration }}</td>
+                            <td>
+                                <button class="btn btn-info btn-sm" @click="showQuizDetails(quiz)">View Details</button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Details Modal -->
+    <div class="modal fade" id="quizDetailsModal" tabindex="-1" aria-labelledby="quizDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="quizDetailsModalLabel">Quiz Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" v-if="selectedQuiz">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">{{ selectedQuiz.subject_name }}</h6>
+                            <h5 class="card-title">{{ selectedQuiz.chapter_name }}</h5>
+                            <div class="quiz-details">
+                                <p><strong>Date:</strong> {{ selectedQuiz.date_of_quiz }}</p>
+                                <p><strong>Duration:</strong> {{ selectedQuiz.time_duration }} minutes</p>
+                                <p><strong>Num Questions:</strong> {{ selectedQuiz.num_questions }} </p>
+                                <p>
+                                    <strong>Status: </strong> 
+                                    <span v-if="selectedQuiz.attempted" class="text-success">Attempted</span>
+                                    <span v-else class="text-warning">Not Attempted</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -93,19 +128,25 @@ export default {
       upcomingQuizzes: [],
       todayQuizzes: [],
       loading: false,
-      error: ''
+      error: '',
+      selectedQuiz: null,
+      quizModal: null
     }
   },
   methods: {
+    async getRequest(route) {
+        const response = await axios.get(route, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        return response;
+    },
     async fetchUpcomingQuizzes() {
       this.loading = true;
       this.error = '';
       try {
-        const response = await axios.get('http://localhost:5000/api/quizzes/upcoming', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+        const response = await this.getRequest('http://localhost:5000/api/quizzes/upcoming');
         this.upcomingQuizzes = response.data.upcoming_quizzes;
         this.todayQuizzes = response.data.today_quizzes;
       } catch (err) {
@@ -116,11 +157,20 @@ export default {
       }
     },
     logout() {
-        localStorage.removeItem('token');
-        this.$router.push('/login');    }
+      localStorage.removeItem('token');
+      this.$router.push('/login');
+    },
+    showQuizDetails(quiz) {
+      this.selectedQuiz = quiz;
+      this.quizModal.show();
+    },
+    closeModal() {
+      this.quizModal.hide();
+    }
   },
   mounted() {
     this.fetchUpcomingQuizzes();
+    this.quizModal = new bootstrap.Modal(document.getElementById('quizDetailsModal'));
   }
 };
 </script>

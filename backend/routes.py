@@ -322,6 +322,7 @@ class UpcomingQuizzesResource(Resource):
                 'subject_name': quiz.chapter.subject.name,
                 'date_of_quiz': quiz.date_of_quiz.isoformat(),
                 'time_duration': str(quiz.time_duration),
+                'num_questions': len(quiz.questions),
                 'attempted': True if Score.query.filter_by(quiz_id = quiz.id, user_id = user_id).all() else False
             }
             for quiz in today_quizzes
@@ -333,7 +334,9 @@ class UpcomingQuizzesResource(Resource):
                 'chapter_name': quiz.chapter.name,
                 'subject_name': quiz.chapter.subject.name,
                 'date_of_quiz': quiz.date_of_quiz.isoformat(),
-                'time_duration': str(quiz.time_duration)
+                'time_duration': str(quiz.time_duration),
+                'num_questions': len(quiz.questions),
+                'attempted': True if Score.query.filter_by(quiz_id = quiz.id, user_id = user_id).all() else False
             }
             for quiz in upcoming_quizzes
         ]
