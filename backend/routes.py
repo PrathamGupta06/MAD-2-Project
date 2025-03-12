@@ -62,10 +62,11 @@ class SubjectResource(Resource):
         )
         db.session.add(subject)
         db.session.commit()
+        cache.delete_memoized(SubjectResource.get)
         return {'message': 'Subject created successfully'}, 201
 
     @admin_required
-    @cache.cached()
+    @cache.memoize()
     def get(self):
         subjects = Subject.query.all()
         return {
@@ -88,6 +89,7 @@ class SubjectResource(Resource):
         subject.name = data['name']
         subject.description = data['description']
         db.session.commit()
+        cache.delete_memoized(SubjectResource.get)
         return {'message': 'Subject updated successfully'}, 200
 
     @admin_required
@@ -108,6 +110,8 @@ class ChapterResource(Resource):
         )
         db.session.add(chapter)
         db.session.commit()
+        cache.delete_memoized(SubjectResource.get)
+        cache.delete_memoized(ChapterResource.get)
         return {'message': 'Chapter created successfully'}, 201
 
     @admin_required
@@ -117,6 +121,8 @@ class ChapterResource(Resource):
         chapter.name = data['name']
         chapter.description = data['description']
         db.session.commit()
+        cache.delete_memoized(SubjectResource.get)
+        cache.delete_memoized(ChapterResource.get)
         return {'message': 'Chapter updated successfully'}, 200
     
     @admin_required
@@ -124,6 +130,8 @@ class ChapterResource(Resource):
         chapter = Chapter.query.get_or_404(chapter_id)
         db.session.delete(chapter)
         db.session.commit()
+        cache.delete_memoized(SubjectResource.get)
+        cache.delete_memoized(ChapterResource.get)
         return {'message': 'Chapter deleted successfully'}, 200
     
     @user_required
@@ -153,6 +161,8 @@ class QuizResource(Resource):
         quiz = Quiz.query.get_or_404(quiz_id)
         db.session.delete(quiz)
         db.session.commit()
+        cache.delete_memoized(QuizResource.get)
+        cache.delete_memoized(QuizzesResource.get)
         return {'message': 'Quiz deleted successfully'}, 200
 
     @user_required
@@ -185,10 +195,12 @@ class QuizzesResource(Resource):
         )
         db.session.add(quiz)
         db.session.commit()
+        cache.delete_memoized(QuizResource.get)
+        cache.delete_memoized(QuizzesResource.get)
         return {'message': 'Quiz created successfully'}, 201
 
     @user_required
-    @cache.cached()
+    @cache.memoize()
     def get(self):
         quizzes = Quiz.query.all()
         quizzes_data = []
@@ -420,7 +432,7 @@ class UserSummaryResource(Resource):
 
 class AdminSummaryResource(Resource):
     @admin_required
-    @cache.cached()
+    @cache.memoized()
     def get(self):
         subjects = Subject.query.all()
         subject_stats = []
