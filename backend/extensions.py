@@ -1,9 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
-from redis import Redis
-from celery import Celery
+from flask_caching import Cache
+
 
 db = SQLAlchemy()
 jwt = JWTManager()
-redis = Redis()
-celery = Celery()
+cache = Cache()

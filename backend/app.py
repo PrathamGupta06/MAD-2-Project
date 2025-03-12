@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from flask_restful import Api
-from extensions import db, jwt
+from extensions import db, jwt, cache
 from config import Config
 from routes import (
     LoginResource, UserRegistrationResource, 
@@ -16,6 +16,8 @@ def create_app(config_class=Config):
     CORS(app)
     db.init_app(app)
     jwt.init_app(app)
+    cache.init_app(app)
+    app.cache = cache
     
     api = Api(app)
     api.add_resource(LoginResource, '/api/login')
@@ -31,7 +33,7 @@ def create_app(config_class=Config):
     api.add_resource(QuizQuestionsResource, '/api/user/quizQuestions/<int:quiz_id>')
     api.add_resource(UserSummaryResource, '/api/user/summary')
     api.add_resource(AdminSummaryResource, '/api/admin/summary')
-    
+
     with app.app_context():
         from models import Admin
         db.create_all()

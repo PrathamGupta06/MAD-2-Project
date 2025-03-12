@@ -5,6 +5,7 @@ from models import Admin, User, Subject, Chapter, Quiz, Question, Score
 from extensions import db
 from datetime import datetime
 from auth import admin_required, user_required
+from extensions import cache
 
 class LoginResource(Resource):
     def post(self):
@@ -64,6 +65,7 @@ class SubjectResource(Resource):
         return {'message': 'Subject created successfully'}, 201
 
     @admin_required
+    @cache.cached()
     def get(self):
         subjects = Subject.query.all()
         return {
@@ -125,6 +127,7 @@ class ChapterResource(Resource):
         return {'message': 'Chapter deleted successfully'}, 200
     
     @user_required
+    @cache.memoize()
     def get(self, chapter_id):
         chapter = Chapter.query.get_or_404(chapter_id)
         return {
@@ -153,6 +156,7 @@ class QuizResource(Resource):
         return {'message': 'Quiz deleted successfully'}, 200
 
     @user_required
+    @cache.memoize()
     def get(self, quiz_id):
         quiz = Quiz.query.get_or_404(quiz_id)
         num_questions = len(quiz.questions)
@@ -184,6 +188,7 @@ class QuizzesResource(Resource):
         return {'message': 'Quiz created successfully'}, 201
 
     @user_required
+    @cache.cached()
     def get(self):
         quizzes = Quiz.query.all()
         quizzes_data = []
@@ -229,6 +234,7 @@ class QuestionResource(Resource):
         return {'message': 'Question created successfully'}, 201
 
     @admin_required
+    @cache.memoize()
     def get(self, question_id):
         question = Question.query.get_or_404(question_id)
         return {
@@ -352,6 +358,7 @@ class UpcomingQuizzesResource(Resource):
 
 class QuizQuestionsResource(Resource):
     @user_required
+    @cache.memoize()
     def get(self, quiz_id):
         quiz = Quiz.query.get_or_404(quiz_id)
         return {
@@ -413,6 +420,7 @@ class UserSummaryResource(Resource):
 
 class AdminSummaryResource(Resource):
     @admin_required
+    @cache.cached()
     def get(self):
         subjects = Subject.query.all()
         subject_stats = []

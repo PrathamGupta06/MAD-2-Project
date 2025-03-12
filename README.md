@@ -12,3 +12,8 @@
 1. `cd frontend`
 2. Install the npm packages: `npm i`
 3. Run the application: `npm run dev`
+
+## Redis and Celery
+1. `docker pull redis` Download the docker image.
+2. `docker run --name redis-mad-2 -d redis -p 6379:6379` Run the docker container
+3. `docker exec -it redis-mad-2 redis-cli` to access the redis cli
