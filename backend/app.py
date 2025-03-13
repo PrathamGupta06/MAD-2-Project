@@ -7,7 +7,7 @@ from config import Config
 from routes import (
     LoginResource, UserRegistrationResource, 
     SubjectResource, QuizResource, QuizzesResource, ScoreResource, SubmitAnswersResource, QuestionResource,
-    ChapterResource, UpcomingQuizzesResource, QuizQuestionsResource, UserSummaryResource, AdminSummaryResource
+    ChapterResource, UserQuizzesResource, QuizQuestionsResource, UserSummaryResource, AdminSummaryResource
 )
 
 from routes import GenerateAdminReport
@@ -31,7 +31,7 @@ def create_app(config_class=Config):
     api.add_resource(SubjectResource, '/api/subjects', '/api/subjects/<int:subject_id>')
     api.add_resource(QuizResource, '/api/quizzes/<int:quiz_id>')
     api.add_resource(QuizzesResource, '/api/quizzes')
-    api.add_resource(UpcomingQuizzesResource, '/api/quizzes/upcoming')
+    api.add_resource(UserQuizzesResource, '/api/user/quizzes')
     api.add_resource(ScoreResource, '/api/scores')
     api.add_resource(SubmitAnswersResource, '/api/submit-answers')
     api.add_resource(QuestionResource, '/api/questions', '/api/questions/<int:question_id>')

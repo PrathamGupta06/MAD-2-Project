@@ -334,7 +334,7 @@ class SubmitAnswersResource(Resource):
 
 
 
-class UpcomingQuizzesResource(Resource):
+class UserQuizzesResource(Resource):
     @user_required
     def get(self):
         user_id = get_jwt_identity()
@@ -391,6 +391,7 @@ class QuizQuestionsResource(Resource):
 
 class UserSummaryResource(Resource):
     @user_required
+    @cache.memoize()
     def get(self):
         user_id = get_jwt_identity()
 

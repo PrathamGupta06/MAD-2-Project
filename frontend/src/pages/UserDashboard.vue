@@ -165,7 +165,7 @@ export default {
       this.loading = true;
       this.error = '';
       try {
-        const response = await axios.get('http://localhost:5000/api/quizzes/upcoming', {
+        const response = await axios.get('http://localhost:5000/api/user/quizzes', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
