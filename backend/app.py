@@ -4,13 +4,13 @@ from flask_restful import Api
 from extensions import db, jwt, cache, mail, excel
 from celery_factory import celery_init_app
 from config import Config
-from routes import (
+from resources import (
     LoginResource, UserRegistrationResource, 
     SubjectResource, QuizResource, QuizzesResource, ScoreResource, SubmitAnswersResource, QuestionResource,
-    ChapterResource, UserQuizzesResource, QuizQuestionsResource, UserSummaryResource, AdminSummaryResource
+    ChapterResource, UserQuizzesResource, QuizQuestionsResource, UserSummaryResource, AdminSummaryResource,
+    GenerateAdminReport
 )
 
-from routes import GenerateAdminReport
 import os
 
 def create_app(config_class=Config):
