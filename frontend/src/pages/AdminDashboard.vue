@@ -28,14 +28,12 @@
                         <router-link class="nav-link" to="/admin/summary">Summary</router-link>
                     </li>
                 </ul>
-                <form class="d-flex me-3">
-                    <input 
-                        class="form-control me-2" 
-                        type="search" 
-                        placeholder="Search subjects or chapters..." 
-                        v-model="searchQuery"
-                        @input="handleSearch">
-                </form>
+                <input 
+                    class="form-control me-2" 
+                    type="search" 
+                    placeholder="Search subjects or chapters..." 
+                    v-model="searchQuery"
+                    @input="handleSearch">
                 <button class="btn btn-outline-danger" @click="logout">Logout</button>
             </div>
         </div>

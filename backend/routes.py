@@ -339,45 +339,32 @@ class UpcomingQuizzesResource(Resource):
     def get(self):
         user_id = get_jwt_identity()
         current_time = datetime.now()
-        all_quizzes = Quiz.query.all()
+        current_date = current_time.date()
         
-        today_quizzes = Quiz.query.filter(
-            Quiz.date_of_quiz == current_time.date(),
-        ).all()
-
-        upcoming_quizzes = Quiz.query.filter(
-            Quiz.date_of_quiz > current_time.date(),
-        ).order_by(Quiz.date_of_quiz.asc()).all()
-       
-        today_quizzes_response = [
-            {
+        all_quizzes = Quiz.query.order_by(Quiz.date_of_quiz.asc()).all()
+        
+        quizzes_response = []
+        
+        for quiz in all_quizzes:
+            if quiz.date_of_quiz < current_date:
+                status = "past"
+            elif quiz.date_of_quiz == current_date:
+                status = "today"
+            else:
+                status = "upcoming"
+            
+            quizzes_response.append({
                 'id': quiz.id,
                 'chapter_name': quiz.chapter.name,
                 'subject_name': quiz.chapter.subject.name,
                 'date_of_quiz': quiz.date_of_quiz.isoformat(),
                 'time_duration': str(quiz.time_duration),
                 'num_questions': len(quiz.questions),
-                'attempted': True if Score.query.filter_by(quiz_id = quiz.id, user_id = user_id).all() else False
-            }
-            for quiz in today_quizzes
-        ]
+                'attempted': bool(Score.query.filter_by(quiz_id=quiz.id, user_id=user_id).first()),
+                'status': status
+            })
         
-        upcoming_quizzes_response = [
-            {
-                'id': quiz.id,
-                'chapter_name': quiz.chapter.name,
-                'subject_name': quiz.chapter.subject.name,
-                'date_of_quiz': quiz.date_of_quiz.isoformat(),
-                'time_duration': str(quiz.time_duration),
-                'num_questions': len(quiz.questions),
-                'attempted': True if Score.query.filter_by(quiz_id = quiz.id, user_id = user_id).all() else False
-            }
-            for quiz in upcoming_quizzes
-        ]
-        return {
-            'today_quizzes': today_quizzes_response,
-            'upcoming_quizzes': upcoming_quizzes_response
-        }
+        return {'quizzes': quizzes_response}
 
 
 class QuizQuestionsResource(Resource):
