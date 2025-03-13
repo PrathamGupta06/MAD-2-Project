@@ -52,6 +52,7 @@ class UserRegistrationResource(Resource):
         user = User(
             username=data['username'],
             full_name=data['full_name'],
+            email=data['email'],
             qualification=data['qualification'],
             dob=dob
         )
@@ -314,12 +315,14 @@ class SubmitAnswersResource(Resource):
         if Score.query.filter_by(user_id=user_id, quiz_id=quiz_id).first():
             return {'message': 'Answers already submitted for this quiz'}, 400
 
-        total_score = 0
+        correct = 0
+        total = 0
         for answer in answers:
             question = Question.query.filter_by(id=answer['question_id'], quiz_id=quiz_id).first()
+            total += 1
             if question.correct_answer == answer['selected_option']:
-                total_score += 1
-
+                correct += 1
+        total_score = (correct/total )* 100
         score = Score(
             user_id=user_id,
             quiz_id=quiz_id,

@@ -1,9 +1,11 @@
 from celery import Celery, Task
+from celery_schedule import beat_schedule
 
 class CeleryConfig:
     broker_url = 'redis://localhost:6379/0'
     result_backend = 'redis://localhost:6379/1'
     timezone = 'Asia/Kolkata'
+    beat_schedule = beat_schedule
 
 def celery_init_app(app) -> Celery:
     class FlaskTask(Task):

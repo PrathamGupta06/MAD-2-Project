@@ -21,6 +21,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     full_name = db.Column(db.String(200), nullable=False)
     qualification = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
     dob = db.Column(db.Date, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     scores = db.relationship('Score', backref='user', cascade='all, delete-orphan', lazy=True)

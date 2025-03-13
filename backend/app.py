@@ -11,6 +11,7 @@ from routes import (
 )
 
 from routes import GenerateAdminReport
+import os
 
 def create_app(config_class=Config):
     app = Flask(__name__)

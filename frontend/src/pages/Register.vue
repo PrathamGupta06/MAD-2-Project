@@ -15,6 +15,10 @@
           <input type="text" v-model="fullName" class="form-control" required />
         </div>
         <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" v-model="email" class="form-control" required />
+        </div>
+        <div class="mb-3">
           <label class="form-label">Date of Birth</label>
           <input type="date" v-model="dob" class="form-control" required />
         </div>
@@ -38,7 +42,8 @@
         password: '',
         fullName: '',
         dob: '',
-        qualification: ''
+        qualification: '',
+        email: ''
       };
     },
     methods: {
@@ -50,7 +55,8 @@
             password: this.password,
             full_name: this.fullName,
             dob: formattedDob,
-            qualification: this.qualification
+            qualification: this.qualification,
+            email: this.email
           });
           alert('Registration successful! Please login.');
           this.$router.push('/login');

@@ -5,3 +5,4 @@ instance
 temp.txt
 node_modules
 *.vscode
+*celerybeat-schedule*
