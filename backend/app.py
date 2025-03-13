@@ -54,4 +54,3 @@ def create_app(config_class=Config):
 
 app = create_app()
 celery_app =  celery_init_app(app)
-# app.run(debug=True)
