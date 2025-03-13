@@ -1,4 +1,15 @@
 <template>
+    <div class="container">
+        <div v-if="successMessage" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+            {{ successMessage }}
+            <button type="button" class="btn-close" @click="successMessage = ''" aria-label="Close"></button>
+        </div>
+
+         <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            {{ errorMessage }}
+            <button type="button" class="btn-close" @click="errorMessage = ''" aria-label="Close"></button>
+        </div>
+    </div>
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
         <div class="container">
             <router-link class="navbar-brand" to="/admin/dashboard">Admin Panel</router-link>
@@ -32,7 +43,15 @@
     <div class="container">
         <h2 class="mb-4">Admin Dashboard</h2>
     </div>
+    
     <div class="container">
+        <button 
+            class="btn btn-success me-2" 
+            @click="generateReport"
+            :disabled="isGeneratingReport">
+            <span v-if="isGeneratingReport" class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Generate Report
+        </button>
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="w-100">Subjects</h1>
             <button class="btn btn-primary" @click="openCreateSubjectModal">
@@ -221,7 +240,10 @@ export default {
             subjectModal: null,
             deleteModal: null,
             chapterModal: null,
-            deleteChapterModal: null
+            deleteChapterModal: null,
+            successMessage: '',
+            errorMessage: '',
+            isGeneratingReport: false
         };
     },
     mounted() {
@@ -310,7 +332,6 @@ export default {
                 await this.fetchData();
             } catch (error) {
                 console.error('Error submitting subject:', error);
-                alert('Failed to save subject. Please try again.');
             }
         },
         confirmDeleteSubject(subject) {
@@ -394,6 +415,22 @@ export default {
         } catch (error) {
             console.error('Error deleting chapter:', error);
             alert('Failed to delete chapter. Please try again.');
+        }
+    },
+    async generateReport() {
+        try {
+            this.isGeneratingReport = true;
+            const response = await axios.post('http://localhost:5000/api/admin/generate_report', {}, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            this.successMessage = response.data.message;
+        } catch (error) {
+            console.error('Error generating report:', error);
+            this.errorMessage = 'Failed to generate report. Please try again.';
+        } finally {
+            this.isGeneratingReport = false;
         }
     }
     },

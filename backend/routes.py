@@ -6,6 +6,15 @@ from extensions import db
 from datetime import datetime
 from auth import admin_required, user_required
 from extensions import cache
+from celery_tasks import generate_admin_report
+
+class GenerateAdminReport(Resource):
+    @admin_required
+    def post(self):
+        task = generate_admin_report.delay()
+        return {'message': 'Export started. You will receive an email once it\'s complete.'}, 200
+
+# TODO: Add the batch job, implement the search functionality for user, Code cleanup and add more caching and invalidation.
 
 class LoginResource(Resource):
     def post(self):
@@ -432,7 +441,7 @@ class UserSummaryResource(Resource):
 
 class AdminSummaryResource(Resource):
     @admin_required
-    @cache.memoized()
+    @cache.memoize()
     def get(self):
         subjects = Subject.query.all()
         subject_stats = []
