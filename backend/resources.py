@@ -14,7 +14,6 @@ class GenerateAdminReport(Resource):
         task = generate_admin_report.delay()
         return {'message': 'Export started. You will receive an email once it\'s complete.'}, 200
 
-# TODO: Add the batch job, implement the search functionality for user, Code cleanup and add more caching and invalidation.
 
 class LoginResource(Resource):
     def post(self):
